@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AMU Tech Hub Project Voting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+      margin: 0;
+      padding: 40px 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 440px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 32px 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      color: #222;
+      font-size: 2em;
+      margin-bottom: 28px;
+      letter-spacing: 0.5px;
+    }
+    .project {
+      margin-bottom: 18px;
+      background: #f4f8fb;
+      border-radius: 8px;
+      padding: 0;
+      transition: box-shadow 0.2s, border 0.2s;
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .project.selected {
+      border: 2px solid #007BFF;
+      background: #eaf4ff;
+      box-shadow: 0 2px 12px rgba(0,123,255,0.08);
+    }
+    .project input[type="radio"] {
+      margin: 0 16px 0 12px;
+      accent-color: #007BFF;
+      transform: scale(1.2);
+      cursor: pointer;
+    }
+    .project label {
+      flex: 1;
+      padding: 14px 0;
+      font-size: 1.07em;
+      cursor: pointer;
+      background: none;
+      border-radius: 0;
+      margin: 0;
+    }
+    button[type="submit"] {
+      display: block;
+      width: 100%;
+      padding: 12px 0;
+      background: linear-gradient(90deg, #007BFF 60%, #0056b3 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 24px;
+      box-shadow: 0 2px 8px rgba(0,123,255,0.08);
+      transition: background 0.2s, transform 0.1s;
+    }
+    button[type="submit"]:hover {
+      background: linear-gradient(90deg, #0056b3 60%, #007BFF 100%);
+      transform: translateY(-2px) scale(1.01);
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 16px 4vw;
+      }
+      h1 {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vote for Your Favorite Project</h1>
+    <form action="/submit-vote" method="POST" id="voteForm">
+      <div id="projectsContainer"></div>
+      <button type="submit">Submit Vote</button>
+    </form>
+  </div>
+  <script>
+    // Fetch projects and render them
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(projects => {
+        const container = document.getElementById('projectsContainer');
+        container.innerHTML = '';
+        projects.forEach((project, idx) => {
+          const div = document.createElement('div');
+          div.className = 'project';
+          div.innerHTML = `
+            <input type="radio" id="project${project.id}" name="vote" value="${project.id}" required>
+            <label for="project${project.id}">${project.name}</label>
+          `;
+          container.appendChild(div);
+        });
+
+        // Highlight selected project card
+        const projectDivs = document.querySelectorAll('.project');
+        projectDivs.forEach(card => {
+          card.addEventListener('click', function() {
+            projectDivs.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+          });
+        });
+      });
+  </script>
+</body>
+</html>

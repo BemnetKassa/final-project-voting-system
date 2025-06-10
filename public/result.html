@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Voting Results</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+    h1 { color: #333; }
+    ul { list-style-type: none; padding: 0; }
+    li {
+      background: #fff;
+      margin: 8px 0;
+      padding: 12px;
+      border-left: 5px solid #007BFF;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 15px;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    canvas {
+      margin-top: 40px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Live Voting Results</h1>
+  <ul id="results"></ul>
+  <button onclick="downloadCSV()">Download CSV</button>
+  <canvas id="resultsChart" width="400" height="200"></canvas>
+
+  <script>
+    let chart; // for Chart.js
+
+    function fetchResults() {
+      fetch('/api/results')
+        .then(response => response.json())
+        .then(data => {
+          const resultsList = document.getElementById('results');
+          resultsList.innerHTML = '';
+
+          const totalVotes = Object.values(data).reduce((sum, v) => sum + v, 0);
+          const sortedEntries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+
+          const labels = [];
+          const counts = [];
+
+          sortedEntries.forEach(([project, count]) => {
+            const percent = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(1) : 0;
+            const li = document.createElement('li');
+            li.textContent = `${project}: ${count} vote(s) (${percent}%)`;
+            resultsList.appendChild(li);
+
+            labels.push(project);
+            counts.push(count);
+          });
+
+          updateChart(labels, counts);
+        })
+        .catch(err => console.error('Error fetching results:', err));
+    }
+
+    function updateChart(labels, data) {
+      const ctx = document.getElementById('resultsChart').getContext('2d');
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Votes',
+            data: data,
+            backgroundColor: '#007BFF'
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              precision: 0
+            }
+          }
+        }
+      });
+    }
+
+    function downloadCSV() {
+      fetch('/api/results')
+        .then(response => response.json())
+        .then(data => {
+          let csv = 'Project,Votes\n';
+          for (const [project, votes] of Object.entries(data)) {
+            csv += `"${project}",${votes}\n`;
+          }
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'vote_results.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+    }
+
+    fetchResults();
+    setInterval(fetchResults, 5000);
+  </script>
+</body>
+</html>
